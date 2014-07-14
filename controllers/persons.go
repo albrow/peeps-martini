@@ -57,13 +57,13 @@ func (Persons) Index(data data.Data, r render.Render) {
 	persons := []*models.Person{}
 	if !data.KeyExists("include") {
 		if err := zoom.NewQuery("Person").Scan(&persons); err != nil {
-			r.JSON(500, map[string]interface{}{"Error": err.Error()})
+			panic(err.Error())
 		}
 	} else {
 		includes := data.GetStrings("include")
 		q := zoom.NewQuery("Person").Include(includes...)
 		if err := q.Scan(&persons); err != nil {
-			r.JSON(500, map[string]interface{}{"Error": err.Error()})
+			panic(err.Error())
 		}
 	}
 	r.JSON(200, persons)
