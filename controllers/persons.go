@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"../models"
+	"errors"
 	"fmt"
 	data "github.com/albrow/martini-data"
 	"github.com/albrow/zoom"
@@ -27,14 +28,20 @@ func (Persons) Create(data data.Data, r render.Render) {
 func (Persons) Show(params martini.Params, data data.Data, r render.Render) {
 	id := params["id"]
 	if id == "" {
-		data := map[string]interface{}{"Error": "Id cannot be empty"}
-		r.JSON(400, data)
+		err := errors.New("Id cannot be empty.")
+		r.JSON(400, newJSONError("invalidParameters", err))
 	}
 
 	p := &models.Person{}
 	if !data.KeyExists("include") {
 		if err := zoom.ScanById(id, p); err != nil {
-			panic(err)
+			if _, ok := err.(*zoom.KeyNotFoundError); ok {
+				err := fmt.Errorf("Could not find person with id %s", id)
+				r.JSON(400, newJSONError("invalidParameters", err))
+				return
+			} else {
+				panic(err)
+			}
 		}
 	} else {
 		includes := data.GetStrings("include")
@@ -44,8 +51,8 @@ func (Persons) Show(params martini.Params, data data.Data, r render.Render) {
 			panic(err)
 		}
 		if len(persons) == 0 {
-			msg := fmt.Sprintf("Could not find person with id %s", id)
-			r.JSON(400, map[string]interface{}{"Error": msg})
+			err := fmt.Errorf("Could not find person with id %s", id)
+			r.JSON(400, newJSONError("invalidParameters", err))
 		} else {
 			p = persons[0]
 		}
@@ -72,14 +79,14 @@ func (Persons) Index(data data.Data, r render.Render) {
 func (Persons) Delete(params martini.Params, r render.Render) {
 	id := params["id"]
 	if id == "" {
-		data := map[string]interface{}{"Error": "Id cannot be empty"}
-		r.JSON(400, data)
+		err := errors.New("Id cannot be empty.")
+		r.JSON(400, newJSONError("invalidParameters", err))
 	}
 
 	if err := zoom.DeleteById("Person", id); err != nil {
 		panic(err)
 	} else {
-		r.JSON(200, map[string]interface{}{"Message": "Ok"})
+		r.JSON(200, newJSONOk())
 	}
 }
 
@@ -87,8 +94,8 @@ func (Persons) Update(params martini.Params, data data.Data, r render.Render) {
 	// Get the model by id
 	id := params["id"]
 	if id == "" {
-		data := map[string]interface{}{"Error": "Id cannot be empty"}
-		r.JSON(400, data)
+		err := errors.New("Id cannot be empty.")
+		r.JSON(400, newJSONError("invalidParameters", err))
 	}
 	p := &models.Person{}
 	if err := zoom.ScanById(id, p); err != nil {
