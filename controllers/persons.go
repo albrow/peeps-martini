@@ -1,8 +1,8 @@
 package controllers
 
 import (
+	"../models"
 	"fmt"
-	"github.com/albrow/learning/peeps-martini/models"
 	data "github.com/albrow/martini-data"
 	"github.com/albrow/zoom"
 	"github.com/go-martini/martini"
@@ -18,7 +18,7 @@ func (Persons) Create(data data.Data, r render.Render) {
 	}
 
 	if err := zoom.Save(p); err != nil {
-		r.JSON(500, map[string]interface{}{"Error": err.Error()})
+		panic(err)
 	} else {
 		r.JSON(200, p)
 	}
@@ -28,24 +28,24 @@ func (Persons) Show(params martini.Params, data data.Data, r render.Render) {
 	id := params["id"]
 	if id == "" {
 		data := map[string]interface{}{"Error": "Id cannot be empty"}
-		r.JSON(500, data)
+		r.JSON(400, data)
 	}
 
 	p := &models.Person{}
 	if !data.KeyExists("include") {
 		if err := zoom.ScanById(id, p); err != nil {
-			r.JSON(500, map[string]interface{}{"Error": err.Error()})
+			panic(err)
 		}
 	} else {
 		includes := data.GetStrings("include")
 		persons := []*models.Person{}
 		q := zoom.NewQuery("Person").Filter("Id =", id).Include(includes...)
 		if err := q.Scan(&persons); err != nil {
-			r.JSON(500, map[string]interface{}{"Error": err.Error()})
+			panic(err)
 		}
 		if len(persons) == 0 {
 			msg := fmt.Sprintf("Could not find person with id %s", id)
-			r.JSON(500, map[string]interface{}{"Error": msg})
+			r.JSON(400, map[string]interface{}{"Error": msg})
 		} else {
 			p = persons[0]
 		}
@@ -57,13 +57,13 @@ func (Persons) Index(data data.Data, r render.Render) {
 	persons := []*models.Person{}
 	if !data.KeyExists("include") {
 		if err := zoom.NewQuery("Person").Scan(&persons); err != nil {
-			panic(err.Error())
+			panic(err)
 		}
 	} else {
 		includes := data.GetStrings("include")
 		q := zoom.NewQuery("Person").Include(includes...)
 		if err := q.Scan(&persons); err != nil {
-			panic(err.Error())
+			panic(err)
 		}
 	}
 	r.JSON(200, persons)
@@ -73,11 +73,11 @@ func (Persons) Delete(params martini.Params, r render.Render) {
 	id := params["id"]
 	if id == "" {
 		data := map[string]interface{}{"Error": "Id cannot be empty"}
-		r.JSON(500, data)
+		r.JSON(400, data)
 	}
 
 	if err := zoom.DeleteById("Person", id); err != nil {
-		r.JSON(500, map[string]interface{}{"Error": err.Error()})
+		panic(err)
 	} else {
 		r.JSON(200, map[string]interface{}{"Message": "Ok"})
 	}
@@ -88,11 +88,11 @@ func (Persons) Update(params martini.Params, data data.Data, r render.Render) {
 	id := params["id"]
 	if id == "" {
 		data := map[string]interface{}{"Error": "Id cannot be empty"}
-		r.JSON(500, data)
+		r.JSON(400, data)
 	}
 	p := &models.Person{}
 	if err := zoom.ScanById(id, p); err != nil {
-		r.JSON(500, map[string]interface{}{"Error": err.Error()})
+		panic(err)
 	}
 
 	// Update person model
@@ -105,7 +105,7 @@ func (Persons) Update(params martini.Params, data data.Data, r render.Render) {
 
 	// Save the model and render the result
 	if err := zoom.Save(p); err != nil {
-		r.JSON(500, map[string]interface{}{"Error": err.Error()})
+		panic(err)
 	} else {
 		r.JSON(200, p)
 	}

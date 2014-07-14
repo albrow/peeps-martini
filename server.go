@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/albrow/learning/peeps-martini/controllers"
-	"github.com/albrow/learning/peeps-martini/models"
+	"./controllers"
+	"./middleware/recovery"
+	"./models"
 	data "github.com/albrow/martini-data"
-	recovery "github.com/albrow/martini-json-recovery"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/render"
 )
